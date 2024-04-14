@@ -6,11 +6,29 @@ import java.net.Socket;
 import java.util.Scanner;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
+
+import java.awt.*;
+
+import java.awt.event.*;
+
+import javax.swing.*;
+
+import javax.swing.border.*;
+
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 /**
  * A simple Swing-based client for the chat server. Graphically it is a frame
@@ -33,7 +51,11 @@ public class ChatClient {
     PrintWriter out;
     JFrame frame = new JFrame("Chatter");
     JTextField textField = new JTextField(50);
-    JTextArea messageArea = new JTextArea(16, 50);
+    private JTextPane messageArea = new JTextPane();
+    private JPanel topPanel = new JPanel();
+
+    private int rows = 20;
+    private int cols = 30;
 
     /**
      * Constructs the client by laying out the GUI and registering a listener with
@@ -47,8 +69,15 @@ public class ChatClient {
 
         textField.setEditable(false);
         messageArea.setEditable(false);
+        messageArea.setMargin(new Insets(5, 5, 100, 5));
+        messageArea.setBackground(Color.WHITE);
+
+        topPanel.setLayout(new BorderLayout());
+        topPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        topPanel.add(new JScrollPane(messageArea), BorderLayout.CENTER);
+
         frame.getContentPane().add(textField, BorderLayout.SOUTH);
-        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+        frame.getContentPane().add(topPanel, BorderLayout.CENTER);
         frame.pack();
 
         // Send on enter then clear to prepare for next message
@@ -65,7 +94,20 @@ public class ChatClient {
                 JOptionPane.PLAIN_MESSAGE);
     }
 
-    private void run() throws IOException {
+    private void appendToPane(JTextPane tp, String msg, Color c) throws BadLocationException
+    {
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
+        StyledDocument doc = tp.getStyledDocument();
+
+        aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
+        aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
+
+        int len = tp.getDocument().getLength();
+        doc.insertString(len, msg, aset);
+    }
+
+    private void run() throws IOException, BadLocationException {
         try {
             var socket = new Socket(serverAddress, 59001);
             in = new Scanner(socket.getInputStream());
@@ -73,13 +115,26 @@ public class ChatClient {
 
             while (in.hasNextLine()) {
                 var line = in.nextLine();
-                if (line.startsWith("SUBMITNAME")) {
+                if (line.startsWith("SUBMITNAME")) 
+                {
                     out.println(getName());
-                } else if (line.startsWith("NAMEACCEPTED")) {
+                } 
+                else if (line.startsWith("NAMEACCEPTED")) 
+                {
                     this.frame.setTitle("Chatter - " + line.substring(13));
                     textField.setEditable(true);
-                } else if (line.startsWith("MESSAGE")) {
-                    messageArea.append(line.substring(8) + "\n");
+                } 
+                else if (line.startsWith("MESSAGE")) 
+                {
+                    //messageArea.append(line.substring(8) + "\n");
+                    appendToPane(messageArea, line.substring(8) + "\n", Color.BLACK);
+                }
+                else if (line.startsWith("SYSTEM"))
+                {
+                    //colored hylighted message
+                    //messageArea.append(line.substring(7) + "\n");
+                    appendToPane(messageArea, line.substring(7) + "\n", Color.RED);
+
                 }
             }
         } finally {
