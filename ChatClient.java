@@ -94,7 +94,7 @@ public class ChatClient {
                 JOptionPane.PLAIN_MESSAGE);
     }
 
-    private void appendToPane(JTextPane tp, String msg, Color c) throws BadLocationException
+    public void appendToPane(JTextPane tp, String msg, Color c) throws BadLocationException
     {
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
